@@ -76,8 +76,9 @@
         <!-- developing module -->
         <module>hdfsreader</module>
         <module>hdfswriter</module>
+        <module>titandbwriter</module>
 
-  </modules>
+    </modules>
 
     <dependencyManagement>
         <dependencies>
