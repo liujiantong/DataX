@@ -18,7 +18,7 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 
 # DataX插件开发指南
 
-##### 请参考(版本较老仅供参考)：[DataX-Plugin-Dev-Introduction](http://code.taobao.org/p/datax/wiki/index/)
+##### 版本较老仅供参考：[DataX-Plugin-Dev-Introduction](http://code.taobao.org/p/datax/wiki/index/)
 
 # Quick Start
 
