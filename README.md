@@ -39,6 +39,6 @@ $ python bin/datax.py job/titanjob.json
 请点击：[DataX数据源参考指南](https://github.com/alibaba/DataX/wiki/DataX-all-data-channels)
 
 
-# Contact us
+# Contact me
 
 邮箱：liujiantong@gmail.com
