@@ -16,27 +16,21 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 
 ##### 请参考：[DataX-Introduction](https://github.com/alibaba/DataX/wiki/DataX-Introduction)
 
-# DataX插件开发指南
-
-##### 版本较老仅供参考：[DataX-Plugin-Dev-Introduction](http://code.taobao.org/p/datax/wiki/index/)
 
 # Quick Start
 
-```
-$ git clone git@github.com:alibaba/DataX.git
-$ cd  {DataX_source_code_home}
-$ mvn clean package assembly:assembly -Dmaven.test.skip=true
-$ cd ./target/datax/datax/
-$ python bin/datax.py job/titanjob.json
+##### Download [DataX下载地址](http://datax-opensource.oss-cn-hangzhou.aliyuncs.com/datax.tar.gz)
 
-```
-
-##### 详情请点击：[Quick Start](https://github.com/alibaba/DataX/wiki/Quick-Start)
+##### 请点击：[Quick Start](https://github.com/alibaba/DataX/wiki/Quick-Start)
 
 
 # Support Data Channels
 
 请点击：[DataX数据源参考指南](https://github.com/alibaba/DataX/wiki/DataX-all-data-channels)
+
+
+# 我要开发新的插件
+请点击：[DataX插件开发宝典](https://github.com/alibaba/DataX/wiki/DataX%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E5%AE%9D%E5%85%B8)
 
 
 # Contact me

@@ -12,63 +12,129 @@
         "content": [
             {
                 "reader": {
-                    "name": "streamreader",
+                    "name": "oraclereader",
                     "parameter": {
-                        "column" : [
+                        "username": "misnew",
+                        "password": "mis32006",
+                        "splitPk": "id",
+                        "connection": [
                             {
-                                "value": "DataX",
-                                "type": "string"
-                            },
-                            {
-                                "value": 19890604,
-                                "type": "long"
-                            },
-                            {
-                                "value": "1989-06-04 00:00:00",
-                                "type": "date"
-                            },
-                            {
-                                "value": true,
-                                "type": "bool"
-                            },
-                            {
-                                "value": "test",
-                                "type": "bytes"
+                                "querySql": [
+                                    "select id,nickname,email,mobile,memberid,cardid from mis_login_user where rownum < 10"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:oracle:thin:@192.168.99.214:1521:ikangrac"
+                                ]
                             }
-                        ],
-                        "sliceRecordCount": 100
+                        ]
                     }
                 },
                 "writer": {
                     "name": "titandbwriter",
                     "parameter": {
-                        "titandb_conf": "/Users/liutao/titan-1.0.0-hadoop1/conf/titan-berkeleyje-es.properties",
-                        "graph": {
-                            "vertex": {
-                                "label": {
-                                    "name": "",
-                                    "column": ""
-                                },
-                                "properties": [
-                                    {
-                                        "name": "",
-                                        "column": ""
-                                    }
-                                ],
-                                "multiplicity": "",
-                                "index": true,
-                                "mixed_index": []
+                        "titandbConf": "conf/titan-berkeleyje.properties",
+                        "column": [
+                            {
+                                "name": "uid",
+                                "type": "long"
                             },
-                            "edge": {
-                                "label": {
-                                    "name": "",
-                                    "column": ""
-                                },
-                                "properties": {
-                                    "name": "",
-                                    "column": ""
-                                }
+                            {
+                                "name": "nickname",
+                                "type": "string"
+                            },
+                            {
+                                "name": "email",
+                                "type": "string"
+                            },
+                            {
+                                "name": "mobile",
+                                "type": "string"
+                            },
+                            {
+                                "name": "memberId",
+                                "type": "long"
+                            },
+                            {
+                                "name": "cardno",
+                                "type": "string"
                             }
+                        ],
+                        "graph": {
+                            "vertices": [
+                                {
+                                    "label": "user",
+                                    "properties": [
+                                        {
+                                            "name": "uid",
+                                            "column": "uid",
+                                            "index": "unique"
+                                        },
+                                        {
+                                            "name": "nickname",
+                                            "column": "nickname",
+                                            "index": "unique"
+                                        }
+                                    ],
+                                    "edges": [
+                                        {
+                                            "label": "hasMobile",
+                                            "vertex": "mobile"
+                                        },
+                                        {
+                                            "label": "hasEmail",
+                                            "vertex": "email"
+                                        },
+                                        {
+                                            "label": "hasMemberId",
+                                            "vertex": "memberId"
+                                        },
+                                        {
+                                            "label": "hasCardno",
+                                            "vertex": "cardno"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "email",
+                                    "properties": [
+                                        {
+                                            "name": "email",
+                                            "column": "email",
+                                            "index": "unique"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "mobile",
+                                    "properties": [
+                                        {
+                                            "name": "mobile",
+                                            "column": "mobile",
+                                            "index": "unique"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "memberId",
+                                    "properties": [
+                                        {
+                                            "name": "memberId",
+                                            "column": "memberId",
+                                            "index": "unique"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "cardno",
+                                    "properties": [
+                                        {
+                                            "name": "cardno",
+                                            "column": "cardno",
+                                            "index": "unique"
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     }
                 }

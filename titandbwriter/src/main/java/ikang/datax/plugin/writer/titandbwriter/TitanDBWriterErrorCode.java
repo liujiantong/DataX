@@ -14,7 +14,7 @@ public enum TitanDBWriterErrorCode implements ErrorCode {
     private final String code;
     private final String description;
 
-    private TitanDBWriterErrorCode(String code,String description) {
+    private TitanDBWriterErrorCode(String code, String description) {
         this.code = code;
         this.description = description;
     }
