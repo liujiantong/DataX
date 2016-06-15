@@ -87,7 +87,7 @@ public class TitanDBWriter extends Writer {
 
                 if (!mgmt.containsVertexLabel(labelName)) {
                     logger.info("=====> Create vertex label:{}", labelName);
-                    mgmt.makeVertexLabel(labelName).make();
+                    VertexLabel vertexLabel = mgmt.makeVertexLabel(labelName).make();
 
                     List<Configuration> props = vconf.getListConfiguration("properties");
                     if (props == null) {
@@ -110,12 +110,13 @@ public class TitanDBWriter extends Writer {
 
                             String idxName = String.format(IDX_NAME_FMT, labelName, pname);
                             if (mgmt.containsGraphIndex(idxName)) continue;
-
                             indexNameSet.add(idxName);
 
+                            logger.info("add propertyKey:{} to index:{}", pname, idxName);
                             TitanManagement.IndexBuilder indexBuilder = mgmt
                                     .buildIndex(idxName, Vertex.class)
                                     .addKey(propertyKey);
+                                    //.indexOnly(vertexLabel);
                             if ("unique".equals(indexType)) {
                                 indexBuilder.unique();
                             }
@@ -126,6 +127,7 @@ public class TitanDBWriter extends Writer {
             }
 
             mgmt.commit();
+            graph.close();
         }
 
         @Override
@@ -146,7 +148,9 @@ public class TitanDBWriter extends Writer {
                 mgmt.rollback();
                 return;
             }
+
             mgmt.commit();
+            graph.close();
         }
 
         @Override
@@ -180,8 +184,7 @@ public class TitanDBWriter extends Writer {
             String titandbConf = this.writerSliceConfig.getString(Key.TITANDB_CONF);
 
             TitanGraph graph = TitanFactory.open(titandbConf);
-            GraphTraversalSource g = graph.traversal();
-            TitanTransaction tx = graph.newTransaction();
+            //GraphTraversalSource g = graph.traversal();
 
             List<Configuration> verticesConfig = writerSliceConfig.getListConfiguration(Key.GRAPH_VERTICES);
 
@@ -216,45 +219,53 @@ public class TitanDBWriter extends Writer {
                         }
                     }
 
+                    /*
                     boolean createFlag = true;
                     if (isUnique) {
                         logger.debug("property:{} is unique", pname);
                         int cidx = columnIndexMap.get(pname);
                         Object cval = columnValue(record.getColumn(cidx));
-                        if (cval != null && g.V().has(labelName, pname, cval).hasNext()) {
+                        if (cval != null && g.V().hasLabel(labelName).has(pname, cval).hasNext()) {
                             logger.info("found property:{} with value:{}", pname, cval);
                             createFlag = false;
                         }
                     }
                     if (!createFlag) continue;
+                    */
 
-                    TitanVertex vertex = tx.getOrCreateVertexLabel(labelName);
-                    for (Configuration pc : props) {
-                        String pn = pc.get(Key.NAME, String.class);
-                        String cname = pc.get(Key.COLUMN, String.class);
-                        logger.info("pn:{}, cname:{}", pn, cname);
+                    TitanTransaction tx = graph.newTransaction();
+                    try {
+                        TitanVertex vertex = tx.addVertex(labelName);
 
-                        Integer idx = columnIndexMap.get(cname);
-                        if (idx == null) {
-                            throw DataXException.asDataXException(
-                                    TitanDBWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-                                    String.format("[%s] 您的参数配置错误", Key.COLUMN));
-                        }
+                        for (Configuration pc : props) {
+                            String pn = pc.get(Key.NAME, String.class);
+                            String cname = pc.get(Key.COLUMN, String.class);
+                            logger.info("pn:{}, cname:{}", pn, cname);
 
-                        Column column = record.getColumn(idx);
-                        Object cval = columnValue(column);
-                        if (cval == null) continue;
+                            Integer idx = columnIndexMap.get(cname);
+                            if (idx == null) {
+                                throw DataXException.asDataXException(
+                                        TitanDBWriterErrorCode.CONFIG_INVALID_EXCEPTION,
+                                        String.format("[%s] 您的参数配置错误", Key.COLUMN));
+                            }
 
-                        logger.info("column:{}, cval:{}", column.asString(), cval);
-                        if (vertex.query().labels(labelName).has(pn, cval).count() == 0) {
-                            logger.info("Create vertex label:{} has property:{}=>{}", labelName, pn, cval);
+                            Column column = record.getColumn(idx);
+                            Object cval = columnValue(column);
+                            if (cval == null) continue;
+
+                            logger.info("====> Create vertex label:{} has property:{}=>{}", labelName, pn, cval);
                             vertex.property(pn, cval);
                         }
+                    } catch (SchemaViolationException e) {
+                        logger.warn("Found vertex with same unique property");
+                        tx.rollback();
+                        continue;
                     }
+                    tx.commit();
                 }
             }
 
-            tx.commit();
+            graph.close();
         }
 
         @Override
