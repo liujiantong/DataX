@@ -1,5 +1,6 @@
 package ikang.datax.plugin.writer.titandbwriter;
 
+
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
@@ -9,8 +10,6 @@ import com.alibaba.datax.common.util.Configuration;
 import com.thinkaurelius.titan.core.*;
 import com.thinkaurelius.titan.core.schema.SchemaAction;
 import com.thinkaurelius.titan.core.schema.TitanManagement;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
-import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +17,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.*;
 
+
 /**
+ * TitanDBWriter 从关系型数据库中读入数据, 生成Titan 图数据库的节点和关系.
+ *
  * Created by liutao on 16/6/8.
  */
 public class TitanDBWriter extends Writer {
@@ -200,7 +202,6 @@ public class TitanDBWriter extends Writer {
 
                 Map<String, Long> vertexMap = new HashMap<>(record.getColumnNumber());
                 Map<String, List<Configuration>> edgesMap = new HashMap<>(record.getColumnNumber());
-                //Map<String, Set<String>> propSetMap = new HashMap<>(record.getColumnNumber());
 
                 for (Configuration vconf : verticesConfig) {
                     String labelName = vconf.get(Key.LABEL, String.class);
@@ -213,8 +214,6 @@ public class TitanDBWriter extends Writer {
                     TitanTransaction tx = graph.newTransaction();
                     try {
                         TitanVertex vertex = tx.addVertex(labelName);
-                        //vertexMap.put(labelName, (Long)vertex.id());
-
                         for (Configuration pc : props) {
                             String pn = pc.get(Key.NAME, String.class);
                             String cname = pc.get(Key.COLUMN, String.class);
@@ -238,7 +237,7 @@ public class TitanDBWriter extends Writer {
 
                         // remove vertex without property
                         if (propSet.isEmpty()) {
-                            logger.info("propSet empty, vertex creation rollback");
+                            logger.debug("propSet empty, vertex creation rollback");
                             tx.rollback();
                             continue;
                         }
@@ -249,8 +248,6 @@ public class TitanDBWriter extends Writer {
                         continue;
                     }
                     tx.commit();
-
-                    //propSetMap.put(labelName, propSet);
 
                     // parse edge config
                     List<Configuration> edges = vconf.getListConfiguration(Key.EDGES);
@@ -272,7 +269,7 @@ public class TitanDBWriter extends Writer {
 
                     if (v == null || edges == null) continue;
 
-                    logger.info("vertex:{} has {} edges", label, edges.size());
+                    logger.debug("vertex:{} has {} edges", label, edges.size());
 
                     for (Configuration ec : edges) {
                         String edgeLabel = ec.getString(Key.LABEL);
@@ -283,6 +280,8 @@ public class TitanDBWriter extends Writer {
 
                         TitanVertex v1 = tx.getVertex(vid1);
                         if (v1 == null) continue;
+
+                        logger.debug("Add edge: {} [{}] {}", v, edgeLabel, v1);
                         v.addEdge(edgeLabel, v1);
                     }
                 }
