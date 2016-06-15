@@ -16,7 +16,6 @@
                     "parameter": {
                         "username": "misnew",
                         "password": "mis32006",
-                        "splitPk": "id",
                         "connection": [
                             {
                                 "querySql": [
