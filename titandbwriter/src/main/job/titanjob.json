@@ -72,7 +72,7 @@
                                         {
                                             "name": "nickname",
                                             "column": "nickname",
-                                            "index": "unique"
+                                            "index": "composite"
                                         }
                                     ],
                                     "edges": [

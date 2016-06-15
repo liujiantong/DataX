@@ -206,32 +206,6 @@ public class TitanDBWriter extends Writer {
 
                     // Assert: We check properties before
                     List<Configuration> props = vconf.getListConfiguration(Key.PROPERTIES);
-                    boolean isUnique = false;
-
-                    // Check unique property
-                    String pname = null;
-                    for (Configuration pc : props) {
-                        pname = pc.get(Key.NAME, String.class);
-                        String index = pc.get(Key.INDEX, String.class);
-                        if ("unique".equals(index)) {
-                            isUnique = true;
-                            break;
-                        }
-                    }
-
-                    /*
-                    boolean createFlag = true;
-                    if (isUnique) {
-                        logger.debug("property:{} is unique", pname);
-                        int cidx = columnIndexMap.get(pname);
-                        Object cval = columnValue(record.getColumn(cidx));
-                        if (cval != null && g.V().hasLabel(labelName).has(pname, cval).hasNext()) {
-                            logger.info("found property:{} with value:{}", pname, cval);
-                            createFlag = false;
-                        }
-                    }
-                    if (!createFlag) continue;
-                    */
 
                     TitanTransaction tx = graph.newTransaction();
                     try {
@@ -240,7 +214,7 @@ public class TitanDBWriter extends Writer {
                         for (Configuration pc : props) {
                             String pn = pc.get(Key.NAME, String.class);
                             String cname = pc.get(Key.COLUMN, String.class);
-                            logger.info("pn:{}, cname:{}", pn, cname);
+                            logger.debug("pn:{}, cname:{}", pn, cname);
 
                             Integer idx = columnIndexMap.get(cname);
                             if (idx == null) {
@@ -253,11 +227,11 @@ public class TitanDBWriter extends Writer {
                             Object cval = columnValue(column);
                             if (cval == null) continue;
 
-                            logger.info("====> Create vertex label:{} has property:{}=>{}", labelName, pn, cval);
                             vertex.property(pn, cval);
+                            logger.info("====> Create vertex label:{} has property:{}=>{}", labelName, pn, column.asString());
                         }
                     } catch (SchemaViolationException e) {
-                        logger.warn("Found vertex with same unique property");
+                        logger.warn("Found duplicated vertex:{} with same unique property", labelName);
                         tx.rollback();
                         continue;
                     }
