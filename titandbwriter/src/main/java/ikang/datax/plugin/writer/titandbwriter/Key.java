@@ -12,6 +12,9 @@ public final class Key {
     public final static String TYPE             = "type";
     public final static String PROPERTIES       = "properties";
     public final static String LABEL            = "label";
+    public final static String EDGES            = "edges";
     public final static String INDEX            = "index";
+    public final static String INDEX_UNIQUE     = "unique";
+    public final static String INDEX_COMPOSITE  = "composite";
 
 }

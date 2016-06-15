@@ -117,7 +117,7 @@ public class TitanDBWriter extends Writer {
                                     .buildIndex(idxName, Vertex.class)
                                     .addKey(propertyKey);
                                     //.indexOnly(vertexLabel);
-                            if ("unique".equals(indexType)) {
+                            if (Key.INDEX_UNIQUE.equals(indexType)) {
                                 indexBuilder.unique();
                             }
                             indexBuilder.buildCompositeIndex();
@@ -184,8 +184,6 @@ public class TitanDBWriter extends Writer {
             String titandbConf = this.writerSliceConfig.getString(Key.TITANDB_CONF);
 
             TitanGraph graph = TitanFactory.open(titandbConf);
-            //GraphTraversalSource g = graph.traversal();
-
             List<Configuration> verticesConfig = writerSliceConfig.getListConfiguration(Key.GRAPH_VERTICES);
 
             Record record;
@@ -200,6 +198,10 @@ public class TitanDBWriter extends Writer {
                                     this.columnNumber));
                 }
 
+                Map<String, Long> vertexMap = new HashMap<>(record.getColumnNumber());
+                Map<String, List<Configuration>> edgesMap = new HashMap<>(record.getColumnNumber());
+                Map<String, Set<String>> propSetMap = new HashMap<>(record.getColumnNumber());
+
                 for (Configuration vconf : verticesConfig) {
                     String labelName = vconf.get(Key.LABEL, String.class);
                     logger.info("labelName: {}", labelName);
@@ -207,9 +209,11 @@ public class TitanDBWriter extends Writer {
                     // Assert: We check properties before
                     List<Configuration> props = vconf.getListConfiguration(Key.PROPERTIES);
 
+                    Set<String> propSet = new HashSet<>(8);
                     TitanTransaction tx = graph.newTransaction();
                     try {
                         TitanVertex vertex = tx.addVertex(labelName);
+                        vertexMap.put(labelName, (Long)vertex.id());
 
                         for (Configuration pc : props) {
                             String pn = pc.get(Key.NAME, String.class);
@@ -228,7 +232,14 @@ public class TitanDBWriter extends Writer {
                             if (cval == null) continue;
 
                             vertex.property(pn, cval);
+                            propSet.add(pn);
                             logger.info("====> Create vertex label:{} has property:{}=>{}", labelName, pn, column.asString());
+                        }
+
+                        // remove vertex without property
+                        if (propSet.isEmpty()) {
+                            tx.rollback();
+                            continue;
                         }
                     } catch (SchemaViolationException e) {
                         logger.warn("Found duplicated vertex:{} with same unique property", labelName);
@@ -236,7 +247,40 @@ public class TitanDBWriter extends Writer {
                         continue;
                     }
                     tx.commit();
+
+                    propSetMap.put(labelName, propSet);
+
+                    // parse edge config
+                    List<Configuration> edges = vconf.getListConfiguration(Key.EDGES);
+                    if (edges != null && !edges.isEmpty()) {
+                        edgesMap.put(labelName, edges);
+                    }
                 }
+
+                // create edges here
+                TitanTransaction tx = graph.newTransaction();
+                Iterator<String> vitr = vertexMap.keySet().iterator();
+                while (vitr.hasNext()) {
+                    String label = vitr.next();
+                    TitanVertex v = tx.getVertex(vertexMap.get(label));
+                    List<Configuration> edges = edgesMap.get(label);
+                    Set<String> propSet = propSetMap.get(label);
+
+                    if (v == null || edges == null || propSet.isEmpty()) continue;
+
+                    logger.info("vertex:{} has {} edges", label, edges.size());
+
+                    for (Configuration ec : edges) {
+                        String edgeLabel = ec.getString(Key.LABEL);
+                        String vname = ec.getString("vertex");
+                        if (!propSet.contains(vname)) continue;
+
+                        TitanVertex v1 = tx.getVertex(vertexMap.get(vname));
+                        if (v1 == null) continue;
+                        v.addEdge(edgeLabel, v1);
+                    }
+                }
+                tx.commit();
             }
 
             graph.close();
