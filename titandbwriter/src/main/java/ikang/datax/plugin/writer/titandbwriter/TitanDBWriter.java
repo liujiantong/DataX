@@ -7,6 +7,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.thinkaurelius.titan.core.*;
+import com.thinkaurelius.titan.core.schema.SchemaAction;
 import com.thinkaurelius.titan.core.schema.TitanManagement;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.T;
@@ -23,11 +24,13 @@ import java.util.*;
 public class TitanDBWriter extends Writer {
 
     private static final Logger logger = LoggerFactory.getLogger(TitanDBWriter.class);
+    private static final String IDX_NAME_FMT = "index_%s_%s";
 
 
     public static class Job extends Writer.Job {
         private Configuration originalConfig;
         private Map<String, String> columnTypeMap = new HashMap<>(16);
+        private Set<String> indexNameSet = new HashSet<>(16);
 
         @Override
         public List<Configuration> split(int mandatoryNumber) {
@@ -105,8 +108,10 @@ public class TitanDBWriter extends Writer {
                             String indexType = pc.getString(Key.INDEX);
                             if (indexType == null) continue;
 
-                            String idxName = String.format("index_%s", labelName);
+                            String idxName = String.format(IDX_NAME_FMT, labelName, pname);
                             if (mgmt.containsGraphIndex(idxName)) continue;
+
+                            indexNameSet.add(idxName);
 
                             TitanManagement.IndexBuilder indexBuilder = mgmt
                                     .buildIndex(idxName, Vertex.class)
@@ -119,6 +124,7 @@ public class TitanDBWriter extends Writer {
                     }
                 }
             }
+
             mgmt.commit();
         }
 
@@ -131,7 +137,10 @@ public class TitanDBWriter extends Writer {
 
             TitanManagement mgmt = graph.openManagement();
             try {
-                //mgmt.updateIndex(mgmt.getGraphIndex("nameAndAge"), SchemaAction.REINDEX).get();
+                Iterator<String> itr = indexNameSet.iterator();
+                while (itr.hasNext()) {
+                    mgmt.updateIndex(mgmt.getGraphIndex(itr.next()), SchemaAction.REINDEX).get();
+                }
             } catch (Exception e) {
                 logger.error("Reindex graph error: {}", e);
                 mgmt.rollback();
@@ -236,7 +245,7 @@ public class TitanDBWriter extends Writer {
                         Object cval = columnValue(column);
                         if (cval == null) continue;
 
-                        logger.info("column:{}, cval:{}", column, cval);
+                        logger.info("column:{}, cval:{}", column.asString(), cval);
                         if (vertex.query().labels(labelName).has(pn, cval).count() == 0) {
                             logger.info("Create vertex label:{} has property:{}=>{}", labelName, pn, cval);
                             vertex.property(pn, cval);
@@ -272,7 +281,7 @@ public class TitanDBWriter extends Writer {
         } else if (Column.Type.BYTES.name().equalsIgnoreCase(type)) {
             return Byte.class;
         } else {
-            return Integer.class;
+            return Long.class;
         }
     }
 
