@@ -41,9 +41,9 @@
         <module>postgresqlreader</module>
         <module>txtfilereader</module>
         <module>streamreader</module>
-        <module>hbasereader</module>
 
         <!--module>drdsreader</module>
+        <module>hbasereader</module>
         <module>sqlserverreader</module>
         <module>odpsreader</module>
         <module>otsreader</module>
@@ -61,8 +61,8 @@
         <module>odpswriter</module>
         <module>otswriter</module>
         <module>sqlserverwriter</module>
-        <module>osswriter</module-->
-        <!--module>adswriter</module>
+        <module>osswriter</module>
+        <module>adswriter</module>
         <module>ocswriter</module>
         <module>hdfsreader</module>
         <module>hdfswriter</module-->

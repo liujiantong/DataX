@@ -203,9 +203,10 @@ public class TitanDBWriter extends Writer {
                 Map<String, Long> vertexMap = new HashMap<>(record.getColumnNumber());
                 Map<String, List<Configuration>> edgesMap = new HashMap<>(record.getColumnNumber());
 
+                new_vertex:
                 for (Configuration vconf : verticesConfig) {
                     String labelName = vconf.get(Key.LABEL, String.class);
-                    logger.info("labelName: {}", labelName);
+                    logger.debug("labelName: {}", labelName);
 
                     // Assert: We check properties before
                     List<Configuration> props = vconf.getListConfiguration(Key.PROPERTIES);
@@ -214,6 +215,7 @@ public class TitanDBWriter extends Writer {
                     TitanTransaction tx = graph.newTransaction();
                     try {
                         TitanVertex vertex = tx.addVertex(labelName);
+                        new_vertex_property:
                         for (Configuration pc : props) {
                             String pn = pc.get(Key.NAME, String.class);
                             String cname = pc.get(Key.COLUMN, String.class);
@@ -223,12 +225,13 @@ public class TitanDBWriter extends Writer {
                             if (idx == null) {
                                 throw DataXException.asDataXException(
                                         TitanDBWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-                                        String.format("[%s] 您的参数配置错误", Key.COLUMN));
+                                        String.format("[%s] 您的参数配置错误, [%s] 字段不存在",
+                                                Key.COLUMN, cname));
                             }
 
                             Column column = record.getColumn(idx);
                             Object cval = columnValue(column);
-                            if (cval == null) continue;
+                            if (cval == null) continue new_vertex_property;
 
                             vertex.property(pn, cval);
                             propSet.add(pn);
@@ -239,13 +242,13 @@ public class TitanDBWriter extends Writer {
                         if (propSet.isEmpty()) {
                             logger.debug("propSet empty, vertex creation rollback");
                             tx.rollback();
-                            continue;
+                            continue new_vertex;
                         }
                         vertexMap.put(labelName, (Long)vertex.id());
                     } catch (SchemaViolationException e) {
                         logger.warn("Found duplicated vertex:{} with same unique property", labelName);
                         tx.rollback();
-                        continue;
+                        continue new_vertex;
                     }
                     tx.commit();
 

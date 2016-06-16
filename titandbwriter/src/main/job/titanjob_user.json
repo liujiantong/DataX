@@ -16,10 +16,13 @@
                     "parameter": {
                         "username": "misnew",
                         "password": "mis32006",
+                        "column": [
+                            "id", "nickname", "email", "mobile", "memberid", "cardid"
+                        ],
                         "connection": [
                             {
-                                "querySql": [
-                                    "select id,nickname,email,mobile,memberid,cardid from mis_login_user where rownum < 10"
+                                "table": [
+                                    "mis_login_user"
                                 ],
                                 "jdbcUrl": [
                                     "jdbc:oracle:thin:@192.168.99.214:1521:ikangrac"
@@ -34,7 +37,7 @@
                         "titandbConf": "conf/titan-berkeleyje.properties",
                         "column": [
                             {
-                                "name": "uid",
+                                "name": "userId",
                                 "type": "long"
                             },
                             {
@@ -64,8 +67,8 @@
                                     "label": "user",
                                     "properties": [
                                         {
-                                            "name": "uid",
-                                            "column": "uid",
+                                            "name": "userId",
+                                            "column": "userId",
                                             "index": "unique"
                                         },
                                         {

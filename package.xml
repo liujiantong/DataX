@@ -96,14 +96,14 @@
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
-        <fileSet>
+        <!--fileSet>
             <directory>hbasereader/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
-        <!--fileSet>
+        <fileSet>
             <directory>ossreader/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
@@ -238,7 +238,7 @@
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
-        <fileSet>
+        <!--fileSet>
             <directory>hbasebulkwriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
@@ -251,7 +251,7 @@
                 <include>**/*.*</include>
             </includes>
             <outputDirectory>datax</outputDirectory>
-        </fileSet>
+        </fileSet-->
         <!--fileSet>
             <directory>tddlwriter/target/datax/</directory>
             <includes>

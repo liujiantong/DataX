@@ -33,6 +33,7 @@
             <artifactId>titan-berkeleyje</artifactId>
             <version>${titan.version}</version>
         </dependency>
+        <!--
         <dependency>
             <groupId>com.thinkaurelius.titan</groupId>
             <artifactId>titan-hbase</artifactId>
@@ -53,6 +54,7 @@
             <artifactId>hbase-client</artifactId>
             <version>0.98.19-hadoop2</version>
         </dependency>
+        -->
         <dependency>
             <groupId>com.alibaba.datax</groupId>
             <artifactId>datax-common</artifactId>
