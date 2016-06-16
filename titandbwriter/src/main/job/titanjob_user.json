@@ -74,7 +74,8 @@
                                         {
                                             "name": "nickname",
                                             "column": "nickname",
-                                            "index": "composite"
+                                            "index": "composite",
+                                            "required": true
                                         }
                                     ],
                                     "edges": [
@@ -102,7 +103,8 @@
                                         {
                                             "name": "email",
                                             "column": "email",
-                                            "index": "unique"
+                                            "index": "unique",
+                                            "required": true
                                         }
                                     ]
                                 },
@@ -112,7 +114,8 @@
                                         {
                                             "name": "mobile",
                                             "column": "mobile",
-                                            "index": "unique"
+                                            "index": "unique",
+                                            "required": true
                                         }
                                     ]
                                 },
@@ -122,7 +125,8 @@
                                         {
                                             "name": "memberId",
                                             "column": "memberId",
-                                            "index": "unique"
+                                            "index": "unique",
+                                            "required": true
                                         }
                                     ]
                                 },
@@ -132,7 +136,8 @@
                                         {
                                             "name": "cardno",
                                             "column": "cardno",
-                                            "index": "unique"
+                                            "index": "unique",
+                                            "required": true
                                         }
                                     ]
                                 }

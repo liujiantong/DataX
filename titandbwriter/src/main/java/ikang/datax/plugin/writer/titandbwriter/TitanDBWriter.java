@@ -7,6 +7,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.google.common.base.Strings;
 import com.thinkaurelius.titan.core.*;
 import com.thinkaurelius.titan.core.schema.SchemaAction;
 import com.thinkaurelius.titan.core.schema.TitanManagement;
@@ -50,8 +51,8 @@ public class TitanDBWriter extends Writer {
             validateParameter();
             List<Configuration> columns = this.originalConfig.getListConfiguration(Key.COLUMN);
             for (Configuration c : columns) {
-                String cname = c.get(Key.NAME, String.class);
-                columnTypeMap.put(cname, c.get(Key.TYPE, String.class));
+                String cname = c.getString(Key.NAME);
+                columnTypeMap.put(cname, c.getString(Key.TYPE));
             }
         }
 
@@ -84,11 +85,11 @@ public class TitanDBWriter extends Writer {
             TitanManagement mgmt = graph.openManagement();
             List<Configuration> verticesConfig = originalConfig.getListConfiguration(Key.GRAPH_VERTICES);
             for (Configuration vconf : verticesConfig) {
-                String labelName = vconf.get("label", String.class);
+                String labelName = vconf.getString("label");
                 logger.debug("labelName:{}", labelName);
 
                 if (!mgmt.containsVertexLabel(labelName)) {
-                    logger.info("=====> Create vertex label:{}", labelName);
+                    logger.debug("=====> Create vertex label:{}", labelName);
                     VertexLabel vertexLabel = mgmt.makeVertexLabel(labelName).make();
 
                     List<Configuration> props = vconf.getListConfiguration("properties");
@@ -102,7 +103,7 @@ public class TitanDBWriter extends Writer {
                     logger.debug("Create {} properties for Vertex:{}", props.size(), labelName);
 
                     for (Configuration pc : props) {
-                        String pname = pc.get("name", String.class);
+                        String pname = pc.getString("name");
                         if (!mgmt.containsPropertyKey(pname)) {
                             String ptype = columnTypeMap.get(pname);
                             Class pclazz = columnType(ptype);
@@ -118,7 +119,6 @@ public class TitanDBWriter extends Writer {
                             TitanManagement.IndexBuilder indexBuilder = mgmt
                                     .buildIndex(idxName, Vertex.class)
                                     .addKey(propertyKey);
-                                    //.indexOnly(vertexLabel);
                             if (Key.INDEX_UNIQUE.equals(indexType)) {
                                 indexBuilder.unique();
                             }
@@ -134,7 +134,6 @@ public class TitanDBWriter extends Writer {
 
         @Override
         public void post() {
-            logger.info("Reindexing graph");
             String titandbConf = this.originalConfig.getString(Key.TITANDB_CONF);
             TitanGraph graph = TitanFactory.open(titandbConf);
             graph.tx().rollback();
@@ -153,6 +152,7 @@ public class TitanDBWriter extends Writer {
 
             mgmt.commit();
             graph.close();
+            logger.info("Reindex graph done");
         }
 
         @Override
@@ -174,10 +174,10 @@ public class TitanDBWriter extends Writer {
             List<Configuration> columns = writerSliceConfig.getListConfiguration(Key.COLUMN);
             int idx = 0;
             for (Configuration c : columns) {
-                String cname = c.get(Key.NAME, String.class);
+                String cname = c.getString(Key.NAME);
                 columnIndexMap.put(cname, idx++);
                 logger.debug("columnIndexMap: {} => {}", cname, idx-1);
-                columnTypeMap.put(cname, c.get(Key.TYPE, String.class));
+                columnTypeMap.put(cname, c.getString(Key.TYPE));
             }
         }
 
@@ -205,7 +205,7 @@ public class TitanDBWriter extends Writer {
 
                 new_vertex:
                 for (Configuration vconf : verticesConfig) {
-                    String labelName = vconf.get(Key.LABEL, String.class);
+                    String labelName = vconf.getString(Key.LABEL);
                     logger.debug("labelName: {}", labelName);
 
                     // Assert: We check properties before
@@ -217,8 +217,8 @@ public class TitanDBWriter extends Writer {
                         TitanVertex vertex = tx.addVertex(labelName);
                         new_vertex_property:
                         for (Configuration pc : props) {
-                            String pn = pc.get(Key.NAME, String.class);
-                            String cname = pc.get(Key.COLUMN, String.class);
+                            String pn = pc.getString(Key.NAME);
+                            String cname = pc.getString(Key.COLUMN);
                             logger.debug("pn:{}, cname:{}", pn, cname);
 
                             Integer idx = columnIndexMap.get(cname);
@@ -231,7 +231,14 @@ public class TitanDBWriter extends Writer {
 
                             Column column = record.getColumn(idx);
                             Object cval = columnValue(column);
-                            if (cval == null) continue new_vertex_property;
+                            if (cval == null || isColumnNullOrEmpty(column)) {
+                                Boolean required = pc.getBool(Key.REQUIRED);
+                                if (Boolean.TRUE.equals(required)) {
+                                    tx.rollback();
+                                    continue new_vertex;
+                                }
+                                continue new_vertex_property;
+                            }
 
                             vertex.property(pn, cval);
                             propSet.add(pn);
@@ -284,7 +291,7 @@ public class TitanDBWriter extends Writer {
                         TitanVertex v1 = tx.getVertex(vid1);
                         if (v1 == null) continue;
 
-                        logger.debug("Add edge: {} [{}] {}", v, edgeLabel, v1);
+                        logger.info("Add edge: {} [{}] {}", v, edgeLabel, v1);
                         v.addEdge(edgeLabel, v1);
                     }
                 }
@@ -338,6 +345,21 @@ public class TitanDBWriter extends Writer {
                 return column.asBytes();
             default:
                 return column.asLong();
+        }
+    }
+
+    private final static boolean isColumnNullOrEmpty(Column column) {
+        if (column.getRawData() == null) return true;
+
+        switch (column.getType()) {
+            case STRING:
+                return Strings.isNullOrEmpty(column.asString());
+            case INT:
+            case LONG:
+            case DOUBLE:
+                return (0 == column.asLong());
+            default:
+                return false;
         }
     }
 
