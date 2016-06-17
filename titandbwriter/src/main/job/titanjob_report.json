@@ -17,7 +17,7 @@
                         "username": "misnew",
                         "password": "mis32006",
                         "column": [
-                            "projectid", "orderid", "cardid", "workno", "regdate", "scrq",
+                            "projectid", "orderid", "cardid", "workno", "regdate",
                             "username", "examuser", "relation", "examusersex", "contacttel"
                         ],
                         "where": "scrq > to_date('2016-01-01', 'YYYY-MM-DD')",
@@ -34,10 +34,122 @@
                     }
                 },
                 "writer": {
-                    "name": "streamwriter",
+                    "name": "titandbwriter",
                     "parameter": {
-                        "visible": false,
-                        "encoding": "UTF-8"
+                        "titandbConf": "conf/titan-berkeleyje.properties",
+                        "column": [
+                            {
+                                "name": "projectId",
+                                "type": "string"
+                            },
+                            {
+                                "name": "orderId",
+                                "type": "long"
+                            },
+                            {
+                                "name": "cardno",
+                                "type": "string"
+                            },
+                            {
+                                "name": "workno",
+                                "type": "string"
+                            },
+                            {
+                                "name": "regDate",
+                                "type": "date"
+                            },
+                            {
+                                "name": "username",
+                                "type": "string"
+                            },
+                            {
+                                "name": "examUser",
+                                "type": "string"
+                            },
+                            {
+                                "name": "relation",
+                                "type": "string"
+                            },
+                            {
+                                "name": "examUserGender",
+                                "type": "string"
+                            },
+                            {
+                                "name": "examUserMobile",
+                                "type": "string"
+                            }
+                        ],
+                        "graph": {
+                            "vertices": [
+                                {
+                                    "label": "report",
+                                    "properties": [
+                                        {
+                                            "name": "workno",
+                                            "column": "workno",
+                                            "index": "unique",
+                                            "required": true
+                                        }
+                                    ],
+                                    "edges": [
+                                        {
+                                            "label": "hasCardno",
+                                            "vertex": "cardno"
+                                        },
+                                        {
+                                            "label": "hasMobile",
+                                            "vertex": "mobile"
+                                        },
+                                        {
+                                            "label": "hasExamUser",
+                                            "vertex": "examUser"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "cardno",
+                                    "properties": [
+                                        {
+                                            "name": "cardno",
+                                            "column": "cardno",
+                                            "index": "unique",
+                                            "required": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "mobile",
+                                    "properties": [
+                                        {
+                                            "name": "mobile",
+                                            "column": "examUserMobile",
+                                            "index": "unique",
+                                            "required": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "examUser",
+                                    "properties": [
+                                        {
+                                            "name": "examUser",
+                                            "column": "examUser",
+                                            "required": true
+                                        },
+                                        {
+                                            "name": "examUserGender",
+                                            "column": "examUserGender"
+                                        }
+                                    ],
+                                    "edges": [
+                                        {
+                                            "label": "hasMobile",
+                                            "vertex": "mobile"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
                     }
                 }
             }
