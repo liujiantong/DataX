@@ -19,6 +19,7 @@
                         "column": [
                             "id", "nickname", "email", "mobile", "memberid", "cardid"
                         ],
+                        "where": "regtime > to_date('2016-01-01', 'YYYY-MM-DD')",
                         "connection": [
                             {
                                 "table": [

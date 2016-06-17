@@ -17,8 +17,9 @@
                         "username": "misnew",
                         "password": "mis32006",
                         "column": [
-                            "memberid", "name", "sex", "idtype", "idnumber", "mobile", "email"
+                            "memberid", "name", "sex", "idtype", "idnumber", "mobile", "email", "passport_id"
                         ],
+                        "where": "operatedate > to_date('2016-01-01', 'YYYY-MM-DD')",
                         "connection": [
                             {
                                 "table": [
@@ -63,6 +64,10 @@
                             {
                                 "name": "email",
                                 "type": "string"
+                            },
+                            {
+                                "name": "memberGroup",
+                                "type": "long"
                             }
                         ],
                         "graph": {
@@ -97,6 +102,10 @@
                                         {
                                             "label": "hasIdNumber",
                                             "vertex": "idNumber"
+                                        },
+                                        {
+                                            "label": "hasMemberGroup",
+                                            "vertex": "memberGroup"
                                         }
                                     ]
                                 },
@@ -143,6 +152,17 @@
                                         {
                                             "name": "idNumber",
                                             "column": "idNumber",
+                                            "index": "unique",
+                                            "required": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "memberGroup",
+                                    "properties": [
+                                        {
+                                            "name": "memberGroup",
+                                            "column": "memberGroup",
                                             "index": "unique",
                                             "required": true
                                         }
