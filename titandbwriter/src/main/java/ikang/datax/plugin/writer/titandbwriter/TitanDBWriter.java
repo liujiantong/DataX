@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
+import java.util.regex.Pattern;
 
 
 /**
@@ -231,13 +232,25 @@ public class TitanDBWriter extends Writer {
 
                             Column column = record.getColumn(idx);
                             Object cval = columnValue(column);
+                            String regex = pc.getString(Key.REGEX);
+                            Boolean required = pc.getBool(Key.REQUIRED);
+
                             if (cval == null || isColumnNullOrEmpty(column)) {
-                                Boolean required = pc.getBool(Key.REQUIRED);
                                 if (Boolean.TRUE.equals(required)) {
                                     tx.rollback();
                                     continue new_vertex;
                                 }
                                 continue new_vertex_property;
+                            } else {
+                                if (regex != null) {
+                                    if (!Pattern.matches(regex, column.asString())) {
+                                        if (Boolean.TRUE.equals(required)) {
+                                            tx.rollback();
+                                            continue new_vertex;
+                                        }
+                                        continue new_vertex_property;
+                                    }
+                                }
                             }
 
                             vertex.property(pn, cval);

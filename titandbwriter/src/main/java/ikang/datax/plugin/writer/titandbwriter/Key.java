@@ -11,6 +11,7 @@ public final class Key {
     public final static String NAME             = "name";
     public final static String TYPE             = "type";
     public final static String REQUIRED         = "required";
+    public final static String REGEX            = "regex";
     public final static String PROPERTIES       = "properties";
     public final static String LABEL            = "label";
     public final static String EDGES            = "edges";

@@ -93,6 +93,11 @@
             <artifactId>plugin-rdbms-util</artifactId>
             <version>${datax-project-version}</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
