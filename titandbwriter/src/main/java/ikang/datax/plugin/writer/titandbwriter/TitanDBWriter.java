@@ -232,7 +232,7 @@ public class TitanDBWriter extends Writer {
 
                             Column column = record.getColumn(idx);
                             Object cval = columnValue(column);
-                            String regex = pc.getString(Key.REGEX);
+                            String regex = pc.getString(Key.PATTERN);
                             Boolean required = pc.getBool(Key.REQUIRED);
 
                             if (cval == null || isColumnNullOrEmpty(column)) {
@@ -296,7 +296,7 @@ public class TitanDBWriter extends Writer {
 
                     for (Configuration ec : edges) {
                         String edgeLabel = ec.getString(Key.LABEL);
-                        String vname = ec.getString("vertex");
+                        String vname = ec.getString(Key.VERTEX);
 
                         Long vid1 = vertexMap.get(vname);
                         if (vid1 == null) continue;

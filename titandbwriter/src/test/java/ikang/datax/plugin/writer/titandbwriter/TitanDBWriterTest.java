@@ -21,4 +21,11 @@ public class TitanDBWriterTest {
         assertTrue(Pattern.matches("1\\d{10}", "15188891234"));
     }
 
+    @Test
+    public void testEmail() {
+        assertTrue("liutao@ikang.com".matches("\\w+@\\w+\\.\\w{2,}"));
+        assertFalse("liutao@ikang".matches("\\w+@\\w+\\.\\w{2,}"));
+        assertTrue("123@ikang.cn".matches("\\w+@\\w+\\.\\w{2,}"));
+    }
+
 }

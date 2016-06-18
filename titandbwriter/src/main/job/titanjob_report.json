@@ -125,7 +125,7 @@
                                             "column": "examUserMobile",
                                             "index": "unique",
                                             "required": true,
-                                            "regex": "1\\d{10}"
+                                            "pattern": "1\\d{10}"
                                         }
                                     ]
                                 },

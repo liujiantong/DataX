@@ -116,7 +116,8 @@
                                             "name": "email",
                                             "column": "email",
                                             "index": "unique",
-                                            "required": true
+                                            "required": true,
+                                            "pattern": "\\w+@\\w+\\.\\w{2,}"
                                         }
                                     ]
                                 },
@@ -127,7 +128,8 @@
                                             "name": "mobile",
                                             "column": "mobile",
                                             "index": "unique",
-                                            "required": true
+                                            "required": true,
+                                            "pattern": "1\\d{10}"
                                         }
                                     ]
                                 },
