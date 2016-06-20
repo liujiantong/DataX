@@ -9,6 +9,7 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.google.common.base.Strings;
 import com.thinkaurelius.titan.core.*;
+import com.thinkaurelius.titan.core.schema.EdgeLabelMaker;
 import com.thinkaurelius.titan.core.schema.SchemaAction;
 import com.thinkaurelius.titan.core.schema.TitanManagement;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
@@ -29,6 +30,7 @@ public class TitanDBWriter extends Writer {
 
     private static final Logger logger = LoggerFactory.getLogger(TitanDBWriter.class);
     private static final String IDX_NAME_FMT = "index_%s_%s";
+    private static final double DEFAULT_WEIGHT = 0.5;
 
 
     public static class Job extends Writer.Job {
@@ -89,11 +91,12 @@ public class TitanDBWriter extends Writer {
                 String labelName = vconf.getString("label");
                 logger.debug("labelName:{}", labelName);
 
+                // create vertex labels
                 if (!mgmt.containsVertexLabel(labelName)) {
                     logger.debug("=====> Create vertex label:{}", labelName);
                     VertexLabel vertexLabel = mgmt.makeVertexLabel(labelName).make();
 
-                    List<Configuration> props = vconf.getListConfiguration("properties");
+                    List<Configuration> props = vconf.getListConfiguration(Key.PROPERTIES);
                     if (props == null) {
                         logger.error("Vertex has no properties");
                         throw DataXException.asDataXException(
@@ -124,6 +127,27 @@ public class TitanDBWriter extends Writer {
                                 indexBuilder.unique();
                             }
                             indexBuilder.buildCompositeIndex();
+                        }
+                    }
+
+                    // create edge labels
+                    List<Configuration> edges = vconf.getListConfiguration(Key.EDGES);
+                    if (edges == null || edges.isEmpty()) continue;
+
+                    for (Configuration econf : edges) {
+                        String eLabel = econf.getString(Key.LABEL);
+                        if (!mgmt.containsEdgeLabel(eLabel)) {
+                            logger.debug("create edge label:{}", eLabel);
+                            EdgeLabelMaker elmaker = mgmt.makeEdgeLabel(eLabel);
+                            String multip = econf.getString(Key.MULTIPLICITY);
+                            if (multip != null) {
+                                Multiplicity mtype = multiplicity(multip);
+                                if (mtype != null) {
+                                    logger.debug("edge label:{} has multiplicity:{}", eLabel, mtype.name());
+                                    elmaker.multiplicity(mtype);
+                                }
+                            }
+                            elmaker.make();
                         }
                     }
                 }
@@ -297,15 +321,30 @@ public class TitanDBWriter extends Writer {
                     for (Configuration ec : edges) {
                         String edgeLabel = ec.getString(Key.LABEL);
                         String vname = ec.getString(Key.VERTEX);
+                        double weight = ec.getDouble(Key.WEIGHT, DEFAULT_WEIGHT);
 
                         Long vid1 = vertexMap.get(vname);
                         if (vid1 == null) continue;
 
                         TitanVertex v1 = tx.getVertex(vid1);
                         if (v1 == null) continue;
-
                         logger.info("Add edge: {} [{}] {}", v, edgeLabel, v1);
-                        v.addEdge(edgeLabel, v1);
+                        TitanEdge tedge = v.addEdge(edgeLabel, v1, Key.WEIGHT, weight);
+
+                        List<Configuration> psconf = ec.getListConfiguration(Key.PROPERTIES);
+                        if (psconf != null && !psconf.isEmpty()) {
+                            for (Configuration epc : psconf) {
+                                String pname = epc.getString(Key.NAME);
+                                String cname = epc.getString(Key.COLUMN);
+                                Integer idx = columnIndexMap.get(cname);
+
+                                Column column = record.getColumn(idx);
+                                Object cval = columnValue(column);
+                                if (cval != null || !isColumnNullOrEmpty(column)) {
+                                    tedge.property(pname, cval);
+                                }
+                            }
+                        }
                     }
                 }
                 tx.commit();
@@ -373,6 +412,22 @@ public class TitanDBWriter extends Writer {
                 return (0 == column.asLong());
             default:
                 return false;
+        }
+    }
+
+    private final static Multiplicity multiplicity(String mtype) {
+        if (Multiplicity.MANY2ONE.name().equalsIgnoreCase(mtype)) {
+            return Multiplicity.MANY2ONE;
+        } else if (Multiplicity.ONE2MANY.name().equalsIgnoreCase(mtype)) {
+            return Multiplicity.ONE2MANY;
+        } else if (Multiplicity.ONE2ONE.name().equalsIgnoreCase(mtype)) {
+            return Multiplicity.ONE2ONE;
+        } else if (Multiplicity.SIMPLE.name().equalsIgnoreCase(mtype)) {
+            return Multiplicity.SIMPLE;
+        } else if (Multiplicity.MULTI.name().equalsIgnoreCase(mtype)) {
+            return Multiplicity.MULTI;
+        } else {
+            return null;
         }
     }
 

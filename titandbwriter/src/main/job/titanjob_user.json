@@ -82,19 +82,27 @@
                                     "edges": [
                                         {
                                             "label": "hasMobile",
-                                            "vertex": "mobile"
+                                            "vertex": "mobile",
+                                            "multiplicity": "one2one",
+                                            "weight": 1.0
                                         },
                                         {
                                             "label": "hasEmail",
-                                            "vertex": "email"
+                                            "vertex": "email",
+                                            "multiplicity": "one2one",
+                                            "weight": 1.0
                                         },
                                         {
                                             "label": "hasMemberId",
-                                            "vertex": "memberId"
+                                            "vertex": "memberId",
+                                            "multiplicity": "one2one",
+                                            "weight": 1.0
                                         },
                                         {
                                             "label": "hasCardno",
-                                            "vertex": "cardno"
+                                            "vertex": "cardno",
+                                            "multiplicity": "one2one",
+                                            "weight": 1.0
                                         }
                                     ]
                                 },
