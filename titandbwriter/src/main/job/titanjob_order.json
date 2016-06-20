@@ -18,7 +18,7 @@
                         "password": "mis32006",
                         "column": [
                             "id", "projectid", "cardid", "memberid", "username", "relation",
-                            "exam_user", "exam_user_sex", "contacttel", "exam_user_idcard"
+                            "exam_user", "exam_user_sex", "contacttel", "cer_type", "exam_user_idcard"
                         ],
                         "where": "creator_time > to_date('2016-01-01', 'YYYY-MM-DD')",
                         "connection": [
@@ -34,10 +34,156 @@
                     }
                 },
                 "writer": {
-                    "name": "streamwriter",
+                    "name": "titandbwriter",
                     "parameter": {
-                        "visible": false,
-                        "encoding": "UTF-8"
+                        "titandbConf": "conf/titan-berkeleyje.properties",
+                        "column": [
+                            {
+                                "name": "orderId",
+                                "type": "long"
+                            },
+                            {
+                                "name": "projectId",
+                                "type": "string"
+                            },
+                            {
+                                "name": "cardno",
+                                "type": "string"
+                            },
+                            {
+                                "name": "memberId",
+                                "type": "long"
+                            },
+                            {
+                                "name": "username",
+                                "type": "string"
+                            },
+                            {
+                                "name": "relation",
+                                "type": "string"
+                            },
+                            {
+                                "name": "examUser",
+                                "type": "string"
+                            },
+                            {
+                                "name": "examUserGender",
+                                "type": "string"
+                            },
+                            {
+                                "name": "examUserMobile",
+                                "type": "string"
+                            },
+                            {
+                                "name": "examUserIdType",
+                                "type": "integer"
+                            },
+                            {
+                                "name": "examUserIdNumber",
+                                "type": "string"
+                            }
+                        ],
+                        "graph": {
+                            "vertices": [
+                                {
+                                    "label": "order",
+                                    "properties": [
+                                        {
+                                            "name": "orderId",
+                                            "column": "orderId",
+                                            "index": "unique",
+                                            "required": true
+                                        }
+                                    ],
+                                    "edges": [
+                                        {
+                                            "label": "hasCardno",
+                                            "vertex": "cardno"
+                                        },
+                                        {
+                                            "label": "hasMemberId",
+                                            "vertex": "memberId"
+                                        },
+                                        {
+                                            "label": "hasExamUser",
+                                            "vertex": "examUser"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "cardno",
+                                    "properties": [
+                                        {
+                                            "name": "cardno",
+                                            "column": "cardno",
+                                            "index": "unique",
+                                            "required": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "memberId",
+                                    "properties": [
+                                        {
+                                            "name": "memberId",
+                                            "column": "memberId",
+                                            "index": "unique",
+                                            "required": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "examUser",
+                                    "properties": [
+                                        {
+                                            "name": "examUser",
+                                            "column": "examUser",
+                                            "required": true
+                                        },
+                                        {
+                                            "name": "examUserGender",
+                                            "column": "examUserGender"
+                                        }
+                                    ],
+                                    "edges": [
+                                        {
+                                            "label": "hasMobile",
+                                            "vertex": "mobile"
+                                        },
+                                        {
+                                            "label": "hasIdCard",
+                                            "vertex": "IdCardNumber"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "mobile",
+                                    "properties": [
+                                        {
+                                            "name": "mobile",
+                                            "column": "examUserMobile",
+                                            "required": true,
+                                            "pattern": "1\\d{10}"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "label": "idNumber",
+                                    "properties": [
+                                        {
+                                            "name": "idType",
+                                            "column": "examUserIdType"
+                                        },
+                                        {
+                                            "name": "idNumber",
+                                            "column": "examUserIdNumber",
+                                            "index": "unique",
+                                            "required": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
                     }
                 }
             }
