@@ -17,8 +17,7 @@
                         "username": "misnew",
                         "password": "mis32006",
                         "column": [
-                            "memberid", "name", "sex", "idtype", "idnumber",
-                            "mobile", "mobilestate", "email", "emailstate", "passport_id"
+                            "memberid", "name", "sex", "idtype", "idnumber", "mobile", "email", "passport_id"
                         ],
                         "where": "operatedate > to_date('2016-01-01', 'YYYY-MM-DD')",
                         "connection": [
@@ -63,16 +62,8 @@
                                 "type": "string"
                             },
                             {
-                                "name": "mobileState",
-                                "type": "integer"
-                            },
-                            {
                                 "name": "email",
                                 "type": "string"
-                            },
-                            {
-                                "name": "emailState",
-                                "type": "integer"
                             },
                             {
                                 "name": "memberGroup",
@@ -98,25 +89,11 @@
                                     "edges": [
                                         {
                                             "label": "hasMobile",
-                                            "vertex": "mobile",
-                                            "properties": [
-                                                {
-                                                    "name": "state",
-                                                    "column": "mobileState",
-                                                    "required": true
-                                                }
-                                            ]
+                                            "vertex": "mobile"
                                         },
                                         {
                                             "label": "hasEmail",
-                                            "vertex": "email",
-                                            "properties": [
-                                                {
-                                                    "name": "state",
-                                                    "column": "emailState",
-                                                    "required": true
-                                                }
-                                            ]
+                                            "vertex": "email"
                                         },
                                         {
                                             "label": "hasMemberId",

@@ -17,7 +17,7 @@
                         "username": "misnew",
                         "password": "mis32006",
                         "column": [
-                            "id", "nickname", "email", "mobile", "memberid", "cardid"
+                            "id", "nickname", "email", "mobile", "memberid", "cardid", "mobilestate", "emailstate"
                         ],
                         "where": "regtime > to_date('2016-01-01', 'YYYY-MM-DD')",
                         "connection": [
@@ -60,6 +60,14 @@
                             {
                                 "name": "cardno",
                                 "type": "string"
+                            },
+                            {
+                                "name": "mobileState",
+                                "type": "integer"
+                            },
+                            {
+                                "name": "emailState",
+                                "type": "integer"
                             }
                         ],
                         "graph": {
@@ -115,6 +123,10 @@
                                             "index": "unique",
                                             "required": true,
                                             "pattern": "\\w+@\\w+\\.\\w{2,}"
+                                        },
+                                        {
+                                            "name": "state",
+                                            "column": "emailState"
                                         }
                                     ]
                                 },
@@ -127,6 +139,10 @@
                                             "index": "unique",
                                             "required": true,
                                             "pattern": "1\\d{10}"
+                                        },
+                                        {
+                                            "name": "state",
+                                            "column": "mobileState"
                                         }
                                     ]
                                 },
