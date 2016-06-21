@@ -14,8 +14,8 @@
                 "reader": {
                     "name": "oraclereader",
                     "parameter": {
-                        "username": "misnew",
-                        "password": "mis32006",
+                        "username": "liutao",
+                        "password": "liutao",
                         "column": [
                             "memberid", "name", "sex", "idtype", "idnumber", "mobile", "email", "passport_id"
                         ],
