@@ -163,7 +163,7 @@
                                             "name": "mobile",
                                             "column": "examUserMobile",
                                             "required": true,
-                                            "pattern": "1\\d{10}"
+                                            "pattern": "^1\\d{10}$"
                                         }
                                     ]
                                 },

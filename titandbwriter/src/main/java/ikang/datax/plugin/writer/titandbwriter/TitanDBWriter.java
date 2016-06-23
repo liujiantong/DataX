@@ -159,6 +159,8 @@ public class TitanDBWriter extends Writer {
 
         @Override
         public void post() {
+            logger.info("Run post job...");
+
             String titandbConf = this.originalConfig.getString(Key.TITANDB_CONF);
             TitanGraph graph = TitanFactory.open(titandbConf);
             graph.tx().rollback();
@@ -193,6 +195,8 @@ public class TitanDBWriter extends Writer {
         private Configuration writerSliceConfig;
         private Map<String, Integer> columnIndexMap = new HashMap<>(16);
         private Map<String, String> columnTypeMap = new HashMap<>(16);
+        private Map<String, Pattern> patterns = new HashMap<>(16);
+
 
         @Override
         public void prepare() {
@@ -203,6 +207,21 @@ public class TitanDBWriter extends Writer {
                 columnIndexMap.put(cname, idx++);
                 logger.debug("columnIndexMap: {} => {}", cname, idx-1);
                 columnTypeMap.put(cname, c.getString(Key.TYPE));
+            }
+
+            List<Configuration> verticesConfig = writerSliceConfig.getListConfiguration(Key.GRAPH_VERTICES);
+            for (Configuration vconf : verticesConfig) {
+                List<Configuration> props = vconf.getListConfiguration(Key.PROPERTIES);
+                for (Configuration pc : props) {
+                    String regex = pc.getString(Key.PATTERN);
+                    if (regex != null) {
+                        Pattern pattern = patterns.get(regex);
+                        if (pattern == null) {
+                            pattern = Pattern.compile(regex);
+                            patterns.put(regex, pattern);
+                        }
+                    }
+                }
             }
         }
 
@@ -228,7 +247,7 @@ public class TitanDBWriter extends Writer {
                 Map<String, Long> vertexMap = new HashMap<>(record.getColumnNumber());
                 Map<String, List<Configuration>> edgesMap = new HashMap<>(record.getColumnNumber());
 
-                new_vertex:
+                NEW_VERTEX:
                 for (Configuration vconf : verticesConfig) {
                     String labelName = vconf.getString(Key.LABEL);
                     logger.debug("labelName: {}", labelName);
@@ -240,7 +259,8 @@ public class TitanDBWriter extends Writer {
                     TitanTransaction tx = graph.newTransaction();
                     try {
                         TitanVertex vertex = tx.addVertex(labelName);
-                        new_vertex_property:
+
+                        NEW_VERTEX_PROPERTY:
                         for (Configuration pc : props) {
                             String pn = pc.getString(Key.NAME);
                             String cname = pc.getString(Key.COLUMN);
@@ -262,17 +282,18 @@ public class TitanDBWriter extends Writer {
                             if (cval == null || isColumnNullOrEmpty(column)) {
                                 if (Boolean.TRUE.equals(required)) {
                                     tx.rollback();
-                                    continue new_vertex;
+                                    continue NEW_VERTEX;
                                 }
-                                continue new_vertex_property;
+                                continue NEW_VERTEX_PROPERTY;
                             } else {
                                 if (regex != null) {
-                                    if (!Pattern.matches(regex, column.asString())) {
+                                    Pattern pattern = patterns.get(regex);
+                                    if (!pattern.matcher(column.asString()).matches()) {
                                         if (Boolean.TRUE.equals(required)) {
                                             tx.rollback();
-                                            continue new_vertex;
+                                            continue NEW_VERTEX;
                                         }
-                                        continue new_vertex_property;
+                                        continue NEW_VERTEX_PROPERTY;
                                     }
                                 }
                             }
@@ -286,13 +307,13 @@ public class TitanDBWriter extends Writer {
                         if (propSet.isEmpty()) {
                             logger.debug("propSet empty, vertex creation rollback");
                             tx.rollback();
-                            continue new_vertex;
+                            continue NEW_VERTEX;
                         }
                         vertexMap.put(labelName, (Long)vertex.id());
                     } catch (SchemaViolationException e) {
                         logger.warn("Found duplicated vertex:{} with same unique property", labelName);
                         tx.rollback();
-                        continue new_vertex;
+                        continue NEW_VERTEX;
                     }
                     tx.commit();
 
