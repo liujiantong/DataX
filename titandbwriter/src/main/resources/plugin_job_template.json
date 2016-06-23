@@ -1,33 +1,38 @@
 {
     "name": "titandbwriter",
     "parameter": {
-        "titandb_conf": "/Users/liutao/titan-1.0.0-hadoop1/conf/titan-berkeleyje-es.properties",
-        "graph": {
-            "vertex": {
-                "label": {
-                    "name": "",
-                    "column": ""
-                },
-                "properties": [
-                    {
-                        "name": "",
-                        "column": ""
-                    }
-                ],
-                "multiplicity": "",
-                "index": "true",
-                "mixed_index": []
-            },
-            "edge": {
-                "label": {
-                    "name": "",
-                    "column": ""
-                },
-                "properties": {
-                    "name": "",
-                    "column": ""
-                }
+        "titandbConf": "",
+        "column": [
+            {
+                "name": "",
+                "type": ""
             }
+        ],
+        "graph": {
+            "vertices": [
+                {
+                    "label": {
+                        "name": "",
+                        "properties": [
+                            {
+                                "name": "",
+                                "column": "",
+                                "index": "",
+                                "required": true,
+                                "pattern": ""
+                            }
+                        ],
+                        "edges": {
+                            "label": "",
+                            "vertex": "",
+                            "properties": {
+                                "name": "",
+                                "column": ""
+                            }
+                        }
+                    }
+                }
+            ]
         }
     }
 }

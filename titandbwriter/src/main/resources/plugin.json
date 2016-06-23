@@ -2,8 +2,8 @@
     "name": "titandbwriter",
     "class": "ikang.datax.plugin.writer.titandbwriter.TitanDBWriter",
     "description": {
-        "useScene": "prod",
-        "mechanism": "transform relational data to vertex and edge concurrent."
+        "useScene": "production",
+        "mechanism": "transform relational data to property graph."
     },
-    "developer": "ikang.com"
+    "developer": "liutao@ikang.com"
 }
