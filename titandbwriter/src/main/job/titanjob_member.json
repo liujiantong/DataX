@@ -19,7 +19,7 @@
                         "column": [
                             "memberid", "name", "sex", "idtype", "idnumber", "mobile", "email", "passport_id"
                         ],
-                        "where": "operatedate > to_date('2016-01-01', 'YYYY-MM-DD')",
+                        "where": "operatedate > to_date('2016-03-20', 'YYYY-MM-DD')",
                         "connection": [
                             {
                                 "table": [

@@ -85,13 +85,14 @@ public class TitanDBWriter extends Writer {
             TitanGraph graph = TitanFactory.open(titandbConf);
             graph.tx().rollback();
 
-            TitanManagement mgmt = graph.openManagement();
+            //TitanManagement mgmt = graph.openManagement();
             List<Configuration> verticesConfig = originalConfig.getListConfiguration(Key.GRAPH_VERTICES);
             for (Configuration vconf : verticesConfig) {
-                String labelName = vconf.getString("label");
+                String labelName = vconf.getString(Key.LABEL);
                 logger.debug("labelName:{}", labelName);
 
                 // create vertex labels
+                TitanManagement mgmt = graph.openManagement();
                 if (!mgmt.containsVertexLabel(labelName)) {
                     logger.debug("=====> Create vertex label:{}", labelName);
                     VertexLabel vertexLabel = mgmt.makeVertexLabel(labelName).make();
@@ -107,7 +108,7 @@ public class TitanDBWriter extends Writer {
                     logger.debug("Create {} properties for Vertex:{}", props.size(), labelName);
 
                     for (Configuration pc : props) {
-                        String pname = pc.getString("name");
+                        String pname = pc.getString(Key.NAME);
                         if (!mgmt.containsPropertyKey(pname)) {
                             String ptype = columnTypeMap.get(pname);
                             Class pclazz = columnType(ptype);
@@ -151,9 +152,9 @@ public class TitanDBWriter extends Writer {
                         }
                     }
                 }
+                mgmt.commit();
             }
 
-            mgmt.commit();
             graph.close();
         }
 
@@ -163,21 +164,20 @@ public class TitanDBWriter extends Writer {
 
             String titandbConf = this.originalConfig.getString(Key.TITANDB_CONF);
             TitanGraph graph = TitanFactory.open(titandbConf);
-            graph.tx().rollback();
 
-            TitanManagement mgmt = graph.openManagement();
-            try {
-                Iterator<String> itr = indexNameSet.iterator();
-                while (itr.hasNext()) {
+            Iterator<String> itr = indexNameSet.iterator();
+            while (itr.hasNext()) {
+                TitanManagement mgmt = graph.openManagement();
+                try {
                     mgmt.updateIndex(mgmt.getGraphIndex(itr.next()), SchemaAction.REINDEX).get();
+                } catch (Exception e) {
+                    logger.error("Reindex graph error: {}", e);
+                    mgmt.rollback();
+                    continue;
                 }
-            } catch (Exception e) {
-                logger.error("Reindex graph error: {}", e);
-                mgmt.rollback();
-                return;
+                mgmt.commit();
             }
 
-            mgmt.commit();
             graph.close();
             logger.info("Reindex graph done");
         }

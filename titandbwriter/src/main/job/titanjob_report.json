@@ -20,7 +20,7 @@
                             "projectid", "orderid", "cardid", "workno", "regdate",
                             "username", "examuser", "relation", "examusersex", "contacttel"
                         ],
-                        "where": "scrq > to_date('2016-01-01', 'YYYY-MM-DD')",
+                        "where": "scrq > to_date('2016-03-20', 'YYYY-MM-DD')",
                         "connection": [
                             {
                                 "table": [
