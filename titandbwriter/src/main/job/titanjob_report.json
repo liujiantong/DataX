@@ -17,7 +17,7 @@
                         "username": "liutao",
                         "password": "liutao",
                         "column": [
-                            "projectid", "orderid", "cardid", "workno", "regdate",
+                            "projectid", "orderid", "cardid", "workno", "scrq",
                             "username", "examuser", "relation", "examusersex", "contacttel"
                         ],
                         "where": "scrq > to_date('2016-03-20', 'YYYY-MM-DD')",
@@ -55,7 +55,7 @@
                                 "type": "string"
                             },
                             {
-                                "name": "regDate",
+                                "name": "createTime",
                                 "type": "date"
                             },
                             {
@@ -88,6 +88,11 @@
                                             "name": "workno",
                                             "column": "workno",
                                             "index": "unique",
+                                            "required": true
+                                        },
+                                        {
+                                            "name": "createTime",
+                                            "column": "createTime",
                                             "required": true
                                         }
                                     ],

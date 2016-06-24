@@ -30,7 +30,7 @@ public class TitanDBWriter extends Writer {
 
     private static final Logger logger = LoggerFactory.getLogger(TitanDBWriter.class);
     private static final String IDX_NAME_FMT = "index_%s_%s";
-    private static final double DEFAULT_WEIGHT = 0.5;
+    private static final double DEFAULT_WEIGHT = 0.75d;
 
 
     public static class Job extends Writer.Job {
