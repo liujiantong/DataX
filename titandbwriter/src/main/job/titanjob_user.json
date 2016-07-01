@@ -14,8 +14,8 @@
                 "reader": {
                     "name": "oraclereader",
                     "parameter": {
-                        "username": "liutao",
-                        "password": "liutao",
+                        "username": "admin",
+                        "password": "admin",
                         "column": [
                             "id", "nickname", "email", "mobile", "memberid", "cardid", "mobilestate", "emailstate"
                         ],
@@ -23,10 +23,10 @@
                         "connection": [
                             {
                                 "table": [
-                                    "mis_login_user"
+                                    "login_user"
                                 ],
                                 "jdbcUrl": [
-                                    "jdbc:oracle:thin:@192.168.99.214:1521:ikangrac"
+                                    "jdbc:oracle:thin:@192.168.1.100:1521:myrac"
                                 ]
                             }
                         ]
