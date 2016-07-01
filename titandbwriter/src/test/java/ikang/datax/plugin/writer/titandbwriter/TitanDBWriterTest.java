@@ -26,6 +26,7 @@ public class TitanDBWriterTest {
         assertTrue("liutao@ikang.com".matches("\\w+@\\w+\\.\\w{2,}"));
         assertFalse("liutao@ikang".matches("\\w+@\\w+\\.\\w{2,}"));
         assertTrue("123@ikang.cn".matches("\\w+@\\w+\\.\\w{2,}"));
+        assertTrue("eikvd@aoi.com".matches("\\w+@\\w+\\.\\w{2,}"));
     }
 
 }
