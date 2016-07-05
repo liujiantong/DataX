@@ -122,7 +122,7 @@
                                             "column": "email",
                                             "index": "unique",
                                             "required": true,
-                                            "pattern": "^\\w+@\\w+\\.\\w{2,}$"
+                                            "pattern": "^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$"
                                         },
                                         {
                                             "name": "state",
