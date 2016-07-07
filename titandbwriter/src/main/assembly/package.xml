@@ -30,6 +30,13 @@
             </includes>
             <outputDirectory>job</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>src/main/conf</directory>
+            <includes>
+                <include>*.*</include>
+            </includes>
+            <outputDirectory>/conf</outputDirectory>
+        </fileSet>
     </fileSets>
 
     <dependencySets>

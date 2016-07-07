@@ -107,6 +107,11 @@ public class TitanDBWriter extends Writer {
 
                     logger.debug("Create {} properties for Vertex:{}", props.size(), labelName);
 
+                    PropertyKey weightKey = mgmt.getPropertyKey(Key.WEIGHT);
+                    if (weightKey == null) {
+                        weightKey = mgmt.makePropertyKey(Key.WEIGHT).dataType(Double.class).make();
+                    }
+
                     for (Configuration pc : props) {
                         String pname = pc.getString(Key.NAME);
                         if (!mgmt.containsPropertyKey(pname)) {
@@ -140,6 +145,7 @@ public class TitanDBWriter extends Writer {
                         if (!mgmt.containsEdgeLabel(eLabel)) {
                             logger.debug("create edge label:{}", eLabel);
                             EdgeLabelMaker elmaker = mgmt.makeEdgeLabel(eLabel);
+                            elmaker.signature(weightKey);
                             String multip = econf.getString(Key.MULTIPLICITY);
                             if (multip != null) {
                                 Multiplicity mtype = multiplicity(multip);
