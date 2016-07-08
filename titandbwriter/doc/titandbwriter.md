@@ -4,7 +4,7 @@
 TitanDBWriter插件利用TitanDB 的java客户端进行TitanDB的写操作。
 ### 2 实现原理
 
-TitanDBWriter通过Datax框架获取Reader生成的数据，然后将Datax支持的类型通过逐一判断转换成TitanDB支持的Vertex和Edge类型。类型转换之后，就可以依托于Datax框架并行的写入TitanDB。
+TitanDBWriter通过Datax Reader 获得数据，然后将关系数据库表记录的字段逐一转换成用TitanDB Vertex和Edge 表示的关联数据模型。之后依托于Datax框架并行的写入TitanDB。
 
 ### 3 功能说明
 
@@ -73,4 +73,3 @@ TitanDBWriter通过Datax框架获取Reader生成的数据，然后将Datax支持
 }
 
 ```
-
