@@ -93,69 +93,69 @@ public class TitanDBWriter extends Writer {
 
                 // create vertex labels
                 TitanManagement mgmt = graph.openManagement();
+                PropertyKey weightKey = mgmt.getPropertyKey(Key.WEIGHT);
+                if (weightKey == null) {
+                    weightKey = mgmt.makePropertyKey(Key.WEIGHT).dataType(Double.class).make();
+                }
+
                 if (!mgmt.containsVertexLabel(labelName)) {
                     logger.debug("=====> Create vertex label:{}", labelName);
-                    VertexLabel vertexLabel = mgmt.makeVertexLabel(labelName).make();
+                    mgmt.makeVertexLabel(labelName).make();
+                }
 
-                    List<Configuration> props = vconf.getListConfiguration(Key.PROPERTIES);
-                    if (props == null) {
-                        logger.error("Vertex has no properties");
-                        throw DataXException.asDataXException(
-                                TitanDBWriterErrorCode.ILLEGAL_VALUE,
-                                String.format("[%s] 参数必须设置", Key.PROPERTIES));
-                    }
+                List<Configuration> props = vconf.getListConfiguration(Key.PROPERTIES);
+                if (props == null) {
+                    logger.error("Vertex has no properties");
+                    throw DataXException.asDataXException(
+                            TitanDBWriterErrorCode.ILLEGAL_VALUE,
+                            String.format("[%s] 参数必须设置", Key.PROPERTIES));
+                }
 
-                    logger.debug("Create {} properties for Vertex:{}", props.size(), labelName);
+                logger.debug("Create {} properties for Vertex:{}", props.size(), labelName);
 
-                    PropertyKey weightKey = mgmt.getPropertyKey(Key.WEIGHT);
-                    if (weightKey == null) {
-                        weightKey = mgmt.makePropertyKey(Key.WEIGHT).dataType(Double.class).make();
-                    }
+                for (Configuration pc : props) {
+                    String pname = pc.getString(Key.NAME);
+                    if (!mgmt.containsPropertyKey(pname)) {
+                        String ptype = columnTypeMap.get(pname);
+                        Class pclazz = columnType(ptype);
+                        PropertyKey propertyKey = mgmt.makePropertyKey(pname).dataType(pclazz).make();
+                        String indexType = pc.getString(Key.INDEX);
+                        if (indexType == null) continue;
 
-                    for (Configuration pc : props) {
-                        String pname = pc.getString(Key.NAME);
-                        if (!mgmt.containsPropertyKey(pname)) {
-                            String ptype = columnTypeMap.get(pname);
-                            Class pclazz = columnType(ptype);
-                            PropertyKey propertyKey = mgmt.makePropertyKey(pname).dataType(pclazz).make();
-                            String indexType = pc.getString(Key.INDEX);
-                            if (indexType == null) continue;
+                        String idxName = String.format(IDX_NAME_FMT, labelName, pname);
+                        if (mgmt.containsGraphIndex(idxName)) continue;
+                        indexNameSet.add(idxName);
 
-                            String idxName = String.format(IDX_NAME_FMT, labelName, pname);
-                            if (mgmt.containsGraphIndex(idxName)) continue;
-                            indexNameSet.add(idxName);
-
-                            logger.debug("add propertyKey:{} to index:{}", pname, idxName);
-                            TitanManagement.IndexBuilder indexBuilder = mgmt
-                                    .buildIndex(idxName, Vertex.class)
-                                    .addKey(propertyKey);
-                            if (Key.INDEX_UNIQUE.equals(indexType)) {
-                                indexBuilder.unique();
-                            }
-                            indexBuilder.buildCompositeIndex();
+                        logger.debug("add propertyKey:{} to index:{}", pname, idxName);
+                        TitanManagement.IndexBuilder indexBuilder = mgmt
+                                .buildIndex(idxName, Vertex.class)
+                                .addKey(propertyKey);
+                        if (Key.INDEX_UNIQUE.equals(indexType)) {
+                            indexBuilder.unique();
                         }
+                        indexBuilder.buildCompositeIndex();
                     }
+                }
 
-                    // create edge labels
-                    List<Configuration> edges = vconf.getListConfiguration(Key.EDGES);
-                    if (edges == null || edges.isEmpty()) continue;
+                // create edge labels
+                List<Configuration> edges = vconf.getListConfiguration(Key.EDGES);
+                if (edges == null || edges.isEmpty()) continue;
 
-                    for (Configuration econf : edges) {
-                        String eLabel = econf.getString(Key.LABEL);
-                        if (!mgmt.containsEdgeLabel(eLabel)) {
-                            logger.debug("create edge label:{}", eLabel);
-                            EdgeLabelMaker elmaker = mgmt.makeEdgeLabel(eLabel);
-                            elmaker.signature(weightKey);
-                            String multip = econf.getString(Key.MULTIPLICITY);
-                            if (multip != null) {
-                                Multiplicity mtype = multiplicity(multip);
-                                if (mtype != null) {
-                                    logger.debug("edge label:{} has multiplicity:{}", eLabel, mtype.name());
-                                    elmaker.multiplicity(mtype);
-                                }
+                for (Configuration econf : edges) {
+                    String eLabel = econf.getString(Key.LABEL);
+                    if (!mgmt.containsEdgeLabel(eLabel)) {
+                        logger.debug("create edge label:{}", eLabel);
+                        EdgeLabelMaker elmaker = mgmt.makeEdgeLabel(eLabel);
+                        elmaker.signature(weightKey);
+                        String multip = econf.getString(Key.MULTIPLICITY);
+                        if (multip != null) {
+                            Multiplicity mtype = multiplicity(multip);
+                            if (mtype != null) {
+                                logger.debug("edge label:{} has multiplicity:{}", eLabel, mtype.name());
+                                elmaker.multiplicity(mtype);
                             }
-                            elmaker.make();
                         }
+                        elmaker.make();
                     }
                 }
                 mgmt.commit();
@@ -413,7 +413,9 @@ public class TitanDBWriter extends Writer {
 
         switch (column.getType()) {
             case STRING:
-                return column.asString();
+                String v = column.asString();
+                if (v == null) return null;
+                return v.trim();
             case DATE:
                 return column.asDate();
             case DOUBLE:
