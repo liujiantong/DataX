@@ -117,6 +117,8 @@ public class TitanDBWriter extends Writer {
 
                 for (Configuration pc : props) {
                     String pname = pc.getString(Key.NAME);
+                    String idxName = String.format(IDX_NAME_FMT, labelName, pname);
+
                     if (!mgmt.containsPropertyKey(pname)) {
                         String ptype = columnTypeMap.get(pname);
                         Class pclazz = columnType(ptype);
@@ -124,19 +126,19 @@ public class TitanDBWriter extends Writer {
                         String indexType = pc.getString(Key.INDEX);
                         if (indexType == null) continue;
 
-                        String idxName = String.format(IDX_NAME_FMT, labelName, pname);
-                        if (mgmt.containsGraphIndex(idxName)) continue;
-                        indexNameSet.add(idxName);
-
-                        logger.debug("add propertyKey:{} to index:{}", pname, idxName);
-                        TitanManagement.IndexBuilder indexBuilder = mgmt
-                                .buildIndex(idxName, Vertex.class)
-                                .addKey(propertyKey);
-                        if (Key.INDEX_UNIQUE.equals(indexType)) {
-                            indexBuilder.unique();
+                        if (!mgmt.containsGraphIndex(idxName)) {
+                            logger.debug("add propertyKey:{} to index:{}", pname, idxName);
+                            TitanManagement.IndexBuilder indexBuilder = mgmt
+                                    .buildIndex(idxName, Vertex.class)
+                                    .addKey(propertyKey);
+                            if (Key.INDEX_UNIQUE.equals(indexType)) {
+                                indexBuilder.unique();
+                            }
+                            indexBuilder.buildCompositeIndex();
                         }
-                        indexBuilder.buildCompositeIndex();
                     }
+
+                    indexNameSet.add(idxName);
                 }
 
                 // create edge labels
@@ -173,6 +175,9 @@ public class TitanDBWriter extends Writer {
 
             String titandbConf = this.originalConfig.getString(Key.TITANDB_CONF);
             TitanGraph graph = TitanFactory.open(titandbConf);
+            graph.tx().rollback();
+
+            logger.info("Found {} reindex jobs", indexNameSet.size());
 
             Iterator<String> itr = indexNameSet.iterator();
             while (itr.hasNext()) {
@@ -241,7 +246,7 @@ public class TitanDBWriter extends Writer {
             String titandbConf = this.writerSliceConfig.getString(Key.TITANDB_CONF);
 
             TitanGraph graph = TitanFactory.open(titandbConf);
-            GraphTraversalSource g = graph.traversal();
+            //GraphTraversalSource g = graph.traversal();
             List<Configuration> verticesConfig = writerSliceConfig.getListConfiguration(Key.GRAPH_VERTICES);
 
             Record record;
@@ -275,10 +280,8 @@ public class TitanDBWriter extends Writer {
                         edgesMap.put(labelName, edges);
                     }
 
-                    Set<String> propSet = new HashSet<>(8);
-                    TitanTransaction txVertex = graph.newTransaction();
-                    boolean rolledback = false;
-
+                    Map<String, Object> vprops = new HashMap<>(8);
+                    TitanTransaction txVertex = null;
                     Vertex vertex = null;
                     try {
                         NEW_VERTEX_PROPERTY:
@@ -302,8 +305,6 @@ public class TitanDBWriter extends Writer {
 
                             if (cval == null || isColumnNullOrEmpty(column)) {
                                 if (Boolean.TRUE.equals(required)) {
-                                    //rolledback = true;
-                                    txVertex.rollback();
                                     continue NEW_VERTEX;
                                 }
                                 continue NEW_VERTEX_PROPERTY;
@@ -312,8 +313,6 @@ public class TitanDBWriter extends Writer {
                                     Pattern pattern = patterns.get(regex);
                                     if (!pattern.matcher(column.asString()).matches()) {
                                         if (Boolean.TRUE.equals(required)) {
-                                            //rolledback = true;
-                                            txVertex.rollback();
                                             continue NEW_VERTEX;
                                         }
                                         continue NEW_VERTEX_PROPERTY;
@@ -324,46 +323,60 @@ public class TitanDBWriter extends Writer {
                             boolean pcreated = true;
                             String indexType = pc.getString(Key.INDEX);
                             if (Key.INDEX_UNIQUE.equals(indexType)) {
+                                GraphTraversalSource g = graph.traversal();
                                 GraphTraversal traversal = g.V().hasLabel(labelName).has(pn, cval);
-                                if (traversal.hasNext()) {
-                                    // replace vertex with old one
-                                    vertex = (Vertex) traversal.next();
-                                    logger.debug("v[{}] exists with p[{}] conflicted", vertex.id(), pn);
 
+                                // found existing vertex with same property
+                                if (traversal.hasNext()) {
                                     pcreated = false;
+
+                                    if (vertex == null) {
+                                        vertex = (Vertex) traversal.next();
+                                    }
+
+                                    vertexMap.put(labelName, (Long)vertex.id());
+                                    logger.debug("v[{}] exists with p[{}] conflicted", vertex.id(), pn);
                                 }
                             }
 
-                            if (vertex == null) {
-                                vertex = txVertex.addVertex(labelName);
-                            }
-
                             if (pcreated) {
-                                vertex.property(pn, cval);
-                                propSet.add(pn);
+                                vprops.put(pn, cval);
                                 logger.debug("====> Create vertex label:{} has property:{}=>{}", labelName, pn, column.asString());
                             }
                         } // end of checking all properties of vertex
 
                         // rollback vertex without property
-                        if (propSet.isEmpty()) {
-                            //logger.debug("propSet empty, vertex creation rollback");
-                            txVertex.rollback();
-                            rolledback = true;
-
-                            if (edges == null || edges.isEmpty()) {
-                                continue NEW_VERTEX;
-                            }
+                        if (vprops.isEmpty()) {
+                            continue NEW_VERTEX;
                         }
+
+                        txVertex = graph.newTransaction();
+                        if (vertex == null) {
+                            vertex = txVertex.addVertex(labelName);
+                            vertexMap.put(labelName, (Long)vertex.id());
+                        }
+
+                        Iterator<Map.Entry<String, Object>> vpIter = vprops.entrySet().iterator();
+                        while (vpIter.hasNext()) {
+                            Map.Entry<String, Object> entry = vpIter.next();
+                            String pn = entry.getKey();
+                            Object cval = entry.getValue();
+                            vertex.property(pn, cval);
+                        }
+                        txVertex.commit();
+
+                        //vertexMap.put(labelName, (Long)vertex.id());
                     } catch (SchemaViolationException e) {
+                        // Assertion: never step here
+                        if (txVertex != null) txVertex.rollback();
                         logger.warn("Found duplicated vertex:{} with same unique property, error:{}", labelName, e.getMessage());
-                        txVertex.rollback();
-                        //rolledback = true;
                         continue NEW_VERTEX;
                     }
 
-                    vertexMap.put(labelName, (Long)vertex.id());
-                    if (!rolledback) txVertex.commit();
+                    // this vertex has no edge
+                    if (edges == null || edges.isEmpty()) {
+                        continue NEW_VERTEX;
+                    }
                 } // end of all vertices
 
 
@@ -378,9 +391,12 @@ public class TitanDBWriter extends Writer {
                     if (vid == null) continue;
 
                     List<Configuration> edges = edgesMap.get(label);
+                    //logger.debug("edge:{}", edges);
                     if (edges == null) continue;
 
                     TitanVertex edgeV = txEdge.getVertex(vid);
+                    //logger.debug("edgeV:{}", edgeV);
+                    if (edgeV == null) continue;
 
                     for (Configuration ec : edges) {
                         String edgeLabel = ec.getString(Key.LABEL);
@@ -403,6 +419,8 @@ public class TitanDBWriter extends Writer {
                                 String cname = epc.getString(Key.COLUMN);
                                 Integer idx = columnIndexMap.get(cname);
 
+                                if (idx == null) continue;
+
                                 Column column = record.getColumn(idx);
                                 Object cval = columnValue(column);
                                 if (cval != null || !isColumnNullOrEmpty(column)) {
@@ -414,7 +432,7 @@ public class TitanDBWriter extends Writer {
                 }
 
                 txEdge.commit();
-            }
+            } // end of all records
 
             graph.close();
         } // end of startWrite method
